@@ -1,5 +1,6 @@
 .venv/
 venv/
+.DS_Store
 
 # Ignore ML model artifacts and large caches (use Git LFS or external storage instead)
 storage/
@@ -11,6 +12,7 @@ models/
 *.bin
 *.ckpt
 *.onnx
+*.pkl
 hf_cache/
 .cache/
 huggingface/
