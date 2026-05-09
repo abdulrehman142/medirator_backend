@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 import uuid
 from pathlib import Path
 from typing import Optional
+import os
+import requests
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -13,7 +15,7 @@ from app.vision import maybe_image_path
 from app.voice import transcribe_audio_file
 from app.core.config import get_settings
 from app.db.indexes import ensure_indexes
-from app.db.mongo import close_mongo, init_mongo
+from app.db.mongo import close_mongo, get_database, init_mongo
 from app.db.redis import close_redis
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.request_log import RequestLogMiddleware
@@ -24,9 +26,41 @@ load_dotenv()
 
 settings = get_settings()
 
+
+def download_file(url: str, path: str) -> None:
+    """Download file from URL if it doesn't exist locally."""
+    if os.path.exists(path):
+        return
+    try:
+        print(f"Downloading model from {url}")
+        response = requests.get(url, timeout=300)
+        response.raise_for_status()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(response.content)
+        print(f"Successfully downloaded model to {path}")
+    except Exception as e:
+        print(f"Warning: Failed to download {url}: {e}")
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_logging()
+    
+    # Download models on startup if URLs are provided
+    xray_url = os.getenv("XRAY_MODEL_URL")
+    symptom_url = os.getenv("SYMPTOM_MODEL_URL")
+    symptoms_list_url = os.getenv("SYMPTOMS_LIST_URL")
+    label_encoder_url = os.getenv("LABEL_ENCODER_URL")
+    
+    if xray_url:
+        download_file(xray_url, "models/chest_xray_model_full.pkl")
+    if symptom_url:
+        download_file(symptom_url, "models/symptom_model.pkl")
+    if symptoms_list_url:
+        download_file(symptoms_list_url, "models/symptoms_list.pkl")
+    if label_encoder_url:
+        download_file(label_encoder_url, "models/label_encoder.pkl")
+    
     db = init_mongo()
     await ensure_indexes(db)
     
@@ -135,6 +169,13 @@ async def multimodal_root_chat(
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/health/db")
+async def health_db() -> dict[str, str]:
+    db = get_database()
+    await db.command("ping")
+    return {"status": "ok", "db": "connected", "database": settings.mongo_db_name}
 
 
 app.include_router(chat_root_router)

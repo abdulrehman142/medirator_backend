@@ -1,4 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+import certifi
 
 from app.core.config import get_settings
 
@@ -10,7 +11,11 @@ def init_mongo() -> AsyncIOMotorDatabase:
     global _client, _db
     settings = get_settings()
     if _db is None:
-        _client = AsyncIOMotorClient(settings.mongo_uri)
+        _client = AsyncIOMotorClient(
+            settings.mongo_uri,
+            serverSelectionTimeoutMS=10000,
+            tlsCAFile=certifi.where(),
+        )
         _db = _client[settings.mongo_db_name]
     return _db
 

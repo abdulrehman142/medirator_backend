@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     mongo_uri: str = "mongodb://localhost:27017"
-    mongo_db_name: str = "medirator"
+    mongo_db_name: str = os.getenv("MONGO_DB_NAME", "medirator_db")
 
     redis_url: str = "redis://localhost:6379/0"
 
