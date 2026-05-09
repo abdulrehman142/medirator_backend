@@ -1,18 +1,101 @@
+########################################
+# 🐍 PYTHON
+########################################
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+########################################
+# 🌐 VIRTUAL ENVIRONMENTS
+########################################
 .venv/
 venv/
-.DS_Store
+ENV/
+.venv311/              # IMPORTANT (your issue)
+backend/.venv311/      # extra safety
 
-# Ignore ML model artifacts and large caches (use Git LFS or external storage instead)
+########################################
+# 🔐 ENV FILES
+########################################
+.env
+.env.*
+!.env.example
+
+########################################
+# 🍎 SYSTEM FILES (Mac)
+########################################
+.DS_Store
+.AppleDouble
+.LSOverride
+
+########################################
+# 📦 DEPENDENCIES / CACHE
+########################################
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+########################################
+# 🤖 ML / MODELS / CACHE
+########################################
 storage/
-backend/storage/
 models/
-*.safetensors
-*.pt
-*.pth
-*.bin
-*.ckpt
-*.onnx
-*.pkl
 hf_cache/
 .cache/
 huggingface/
+
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.pkl   # ❗IMPORTANT: prevents accidental model dumps (optional but safer)
+
+########################################
+# 🗄️ MONGO / LOCAL DATA
+########################################
+.mongo-data/
+backend/.mongo-data/
+
+########################################
+# 📊 LOGS
+########################################
+*.log
+logs/
+
+########################################
+# 🧪 TEST / COVERAGE
+########################################
+htmlcov/
+.coverage
+coverage.xml
+
+########################################
+# 🧠 IDE / EDITORS
+########################################
+.vscode/
+.idea/
+*.swp
+
+########################################
+# 🚀 BUILD / DIST
+########################################
+dist/
+build/
+*.egg-info/
+
+########################################
+# ⚙️ NODE / FRONTEND (if inside repo)
+########################################
+node_modules/
+dist/
+build/
+
+########################################
+# 🧹 TEMP FILES
+########################################
+*.tmp
