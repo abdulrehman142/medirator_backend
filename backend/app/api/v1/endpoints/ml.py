@@ -1,9 +1,12 @@
 """ML model prediction endpoints via Hugging Face Space."""
 
+import logging
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.services.hf_client import call_hf_predict, HFClientError
+
+_LOGGER = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -18,9 +21,10 @@ class PredictResponse(BaseModel):
     status: str
     data: dict | list | str | None = None
     message: str | None = None
+    details: str | None = None
 
 
-@router.post("/predict", response_model=PredictResponse, summary="Get ML model prediction")
+@router.post("/predict", response_model=PredictResponse, summary="Get ML model prediction from HF Space")
 async def predict(payload: PredictRequest) -> PredictResponse:
     """
     Get model prediction from Hugging Face Space.
@@ -37,24 +41,44 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         HTTPException: If HF Space API fails
     """
     try:
-        # Call HF Space API
-        hf_response = await call_hf_predict(payload.input)
+        _LOGGER.info(f"[ML Endpoint] Prediction request received. Input length: {len(payload.input)}")
+        
+        # Call HF Space API (sync)
+        hf_response = call_hf_predict(payload.input)
+        
+        _LOGGER.info(f"[ML Endpoint] HF Space returned successfully. Response type: {type(hf_response)}")
         
         # Return successful response with HF data
         return PredictResponse(
             status="success",
             data=hf_response,
-            message=None
+            message=None,
+            details=None
         )
         
     except HFClientError as exc:
+        error_msg = str(exc)
+        _LOGGER.error(f"[ML Endpoint] HF Client error: {error_msg}")
+        
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="ML model service temporarily unavailable"
+            detail={
+                "status": "error",
+                "message": "Failed to connect to Hugging Face model",
+                "details": error_msg
+            }
         ) from exc
         
     except Exception as exc:
+        error_msg = f"{type(exc).__name__}: {exc}"
+        _LOGGER.error(f"[ML Endpoint] Unexpected error: {error_msg}")
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to process prediction request"
+            detail={
+                "status": "error",
+                "message": "Failed to process prediction request",
+                "details": error_msg
+            }
         ) from exc
+
