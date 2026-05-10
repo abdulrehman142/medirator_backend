@@ -1,4 +1,4 @@
-"""Vision helpers shared by MedGemma preprocessing."""
+"""Vision helpers for image utilities used in the project."""
 
 from __future__ import annotations
 

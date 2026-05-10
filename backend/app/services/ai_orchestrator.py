@@ -214,12 +214,6 @@ class AIOrchestrator:
                 gemini_model = None
 
         xrayas_ready = self.xrayas.ready
-        if not xrayas_ready:
-            try:
-                await asyncio.to_thread(self.xrayas.load_model)
-                xrayas_ready = self.xrayas.ready
-            except Exception:
-                xrayas_ready = False
 
         return {
             "gemini": {

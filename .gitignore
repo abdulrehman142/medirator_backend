@@ -47,6 +47,10 @@ hf_cache/
 .cache/
 huggingface/
 
+# Local ML work folder (kept out of backend deployment)
+ML/
+notebooks/
+
 *.bin
 *.safetensors
 *.pt

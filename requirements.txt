@@ -1,1 +1,2 @@
--r backend/requirements.txt
+# Legacy top-level requirements placeholder. Backend has its own requirements in backend/requirements.txt
+# Keep this file minimal to avoid accidentally installing heavy ML deps at root.

@@ -6,7 +6,6 @@ async def test_orchestrator():
     print("Initializing AI Orchestrator...")
     orchestrator = AIOrchestrator()
     
-    print(f"MedGemma Mock Mode: {orchestrator.medgemma.mock_mode}")
     print(f"Gemini API Configured: {orchestrator.gemini.configured()}")
     
     print("\n--- Testing Interaction ---")

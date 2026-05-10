@@ -2,8 +2,6 @@ from contextlib import asynccontextmanager
 import uuid
 from pathlib import Path
 from typing import Optional
-import os
-import requests
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -26,41 +24,9 @@ load_dotenv()
 
 settings = get_settings()
 
-
-def download_file(url: str, path: str) -> None:
-    """Download file from URL if it doesn't exist locally."""
-    if os.path.exists(path):
-        return
-    try:
-        print(f"Downloading model from {url}")
-        response = requests.get(url, timeout=300)
-        response.raise_for_status()
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "wb") as f:
-            f.write(response.content)
-        print(f"Successfully downloaded model to {path}")
-    except Exception as e:
-        print(f"Warning: Failed to download {url}: {e}")
-
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_logging()
-    
-    # Download models on startup if URLs are provided
-    xray_url = os.getenv("XRAY_MODEL_URL")
-    symptom_url = os.getenv("SYMPTOM_MODEL_URL")
-    symptoms_list_url = os.getenv("SYMPTOMS_LIST_URL")
-    label_encoder_url = os.getenv("LABEL_ENCODER_URL")
-    
-    if xray_url:
-        download_file(xray_url, "models/chest_xray_model_full.pkl")
-    if symptom_url:
-        download_file(symptom_url, "models/symptom_model.pkl")
-    if symptoms_list_url:
-        download_file(symptoms_list_url, "models/symptoms_list.pkl")
-    if label_encoder_url:
-        download_file(label_encoder_url, "models/label_encoder.pkl")
-    
     try:
         db = init_mongo()
         await ensure_indexes(db)

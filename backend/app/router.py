@@ -1,4 +1,4 @@
-"""Primary inference routing: chooses MedGemma vs Gemini before the orchestrator runs."""
+"""Primary inference routing for the orchestrator (MedGemma removed)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ from enum import Enum
 
 
 class InferencePrimary(str, Enum):
-    MEDGEMMA = "medgemma"
     GEMINI = "gemini"
 
 
@@ -125,38 +124,10 @@ def _looks_conversational_or_light_medical(text: str) -> bool:
     return any(fragment in norm for fragment in ("define ", "what is ", "what are "))
 
 
-def decide_primary_route(
-    *,
-    has_image: bool,
-    text: str,
-    total_file_chars: int = 0,
-) -> InferencePrimary:
+def decide_primary_route(*, has_image: bool, text: str, total_file_chars: int = 0,) -> InferencePrimary:
+    """Routing with MedGemma removed — always route to Gemini.
+
+    This function kept for compatibility but now returns `GEMINI` for
+    all inputs to ensure no ML model is selected.
     """
-    MEDGEMMA-FIRST routing strategy (user spec):
-    - ALWAYS route to MedGemma for medical/clinical queries unless proven to be app-related
-    - Use Gemini ONLY for:
-      1. Application/UI/technical questions
-      2. As fallback if MedGemma fails/has low confidence
-    
-    Rules:
-    - Image → MedGemma (vision)
-    - Complex medical reasoning → MedGemma
-    - Substantial uploaded evidence (≥4000 chars) → MedGemma
-    - App/system question (UI, navigation, account) → Gemini
-    - Otherwise → MedGemma (assume medical unless proven otherwise)
-    """
-    # Vision always goes to MedGemma
-    if has_image:
-        return InferencePrimary.MEDGEMMA
-
-    # Complex medical or substantial evidence → MedGemma
-    if _is_complex_medical_reasoning(text) or total_file_chars >= 4000:
-        return InferencePrimary.MEDGEMMA
-
-    # App/system question → Gemini
-    if _is_app_or_system_question(text):
-        return InferencePrimary.GEMINI
-
-    # Default: assume medical and route to MedGemma
-    # (Orchestrator will fallback to Gemini if MedGemma fails/low confidence)
-    return InferencePrimary.MEDGEMMA
+    return InferencePrimary.GEMINI
