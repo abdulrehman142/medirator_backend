@@ -12,6 +12,7 @@ redis
 httpx
 email-validator
 certifi
+google-genai
 Pillow
 pypdf
 pytesseract
