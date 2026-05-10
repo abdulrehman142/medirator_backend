@@ -1,0 +1,380 @@
+fever
+cough
+shortness of breath
+chest pain
+headache
+fatigue
+muscle ache
+loss of appetite
+sore throat
+nausea
+vomiting
+diarrhea
+abdominal pain
+constipation
+bloating
+gas
+heartburn
+acid reflux
+indigestion
+dizziness
+vertigo
+blurred vision
+double vision
+eye pain
+dry eyes
+tearing
+itchy eyes
+ear pain
+ear fullness
+tinnitus
+hearing loss
+nasal congestion
+runny nose
+sneezing
+nose bleed
+sinus pain
+sinus drainage
+bad breath
+mouth ulcers
+gum swelling
+gum bleeding
+tooth pain
+tooth sensitivity
+loose teeth
+jaw pain
+difficulty chewing
+difficulty swallowing
+hoarseness
+voice loss
+whooping cough
+asthma
+wheezing
+chest tightness
+shallow breathing
+rapid breathing
+slow breathing
+breath holding
+hiccups
+sighing
+yawning
+sleep apnea
+snoring
+sleepiness
+insomnia
+nightmares
+night sweats
+sleepwalking
+sleep paralysis
+sleep talking
+tremor
+shaking
+stiffness
+muscle cramps
+muscle weakness
+muscle twitching
+numbness
+tingling
+burning sensation
+electric shock sensation
+pain
+aching
+soreness
+tenderness
+bruising
+swelling
+inflammation
+redness
+warmth
+coldness
+pallor
+flushing
+cyanosis
+jaundice
+hives
+rash
+itching
+eczema
+psoriasis
+acne
+boils
+carbuncles
+skin ulcers
+warts
+moles
+skin tags
+freckles
+age spots
+vitiligo
+alopecia
+hair loss
+excessive hair
+hirsutism
+dandruff
+scalp itching
+scalp pain
+ingrown nails
+nail discoloration
+nail brittleness
+nail ridges
+clubbing
+edema
+lymph node swelling
+spleen enlargement
+liver enlargement
+thyroid enlargement
+goiter
+breast tenderness
+breast swelling
+nipple discharge
+nipple inversion
+testicular pain
+testicular swelling
+prostate pain
+pelvic pain
+lower back pain
+upper back pain
+mid back pain
+neck pain
+shoulder pain
+arm pain
+elbow pain
+wrist pain
+hand pain
+finger pain
+hip pain
+thigh pain
+knee pain
+shin pain
+ankle pain
+foot pain
+heel pain
+toe pain
+joint pain
+joint stiffness
+reduced range of motion
+clicking joints
+popping joints
+locking joints
+unstable joints
+overactive reflexes
+underactive reflexes
+abnormal reflexes
+seizures
+convulsions
+fainting
+syncope
+blackouts
+loss of consciousness
+confusion
+delirium
+dementia
+memory loss
+difficulty concentrating
+brain fog
+forgetfulness
+poor judgment
+impaired decision making
+anxiety
+panic attacks
+phobias
+compulsive behavior
+obsessive thoughts
+paranoia
+hallucinations
+delusions
+mood swings
+irritability
+anger
+aggression
+sadness
+depression
+hopelessness
+suicidal thoughts
+low self esteem
+shame
+guilt
+apathy
+anhedonia
+withdrawal
+isolation
+hyperactivity
+impulsivity
+inattention
+distractibility
+restlessness
+fidgeting
+pacing
+repetitive behavior
+tics
+stuttering
+slurred speech
+mutism
+selective mutism
+articulation disorder
+voice changes
+high pitched voice
+low pitched voice
+nasal voice
+breathy voice
+raspy voice
+monotone voice
+emotional lability
+inappropriate laughter
+crying
+sudden mood changes
+exaggerated reactions
+diminished reactions
+flat affect
+blunted affect
+restricted affect
+inappropriate affect
+incongruent affect
+dissociation
+derealization
+depersonalization
+out of body experience
+time distortion
+lost time
+gaps in memory
+recovered memories
+confabulation
+false memories
+intrusive memories
+flashbacks
+nightmares
+sleep deprivation
+fatigue
+exhaustion
+weakness
+lethargy
+malaise
+unwell feeling
+aching all over
+heavy feeling
+light feeling
+floating sensation
+sinking sensation
+crushing sensation
+pressure
+tightness
+tension
+rigidity
+paralysis
+temporary paralysis
+hemiplegia
+paraplegia
+tetraplegia
+quadriplegia
+monoplegia
+drooping
+sagging
+asymmetry
+deviation
+deviation of mouth
+deviation of eyes
+ptosis
+lid lag
+nystagmus
+strabismus
+diplopia
+scotoma
+floaters
+flashing lights
+halos
+metamorphopsia
+micropsia
+macropsia
+akinetopsia
+color blindness
+night blindness
+photophobia
+photopsia
+visual snow
+tunnel vision
+peripheral vision loss
+central vision loss
+monocular vision loss
+binocular vision loss
+sudden blindness
+gradual blindness
+ocular pain
+foreign body sensation
+sand in eyes feeling
+gritty sensation
+dry sensation
+watery eyes
+excessive tearing
+red eyes
+yellow eyes
+white eyes
+bloodshot eyes
+subconjunctival hemorrhage
+hyphema
+corneal abrasion
+corneal ulcer
+cataracts
+glaucoma
+retinal detachment
+macular degeneration
+retinitis
+uveitis
+keratitis
+conjunctivitis
+blepharitis
+chalazion
+stye
+pinguecula
+pterygium
+presbyopia
+myopia
+hyperopia
+astigmatism
+anisometropia
+amblyopia
+lazy eye
+color vision deficiency
+protanopia
+deuteranopia
+tritanopia
+achromatopsia
+diplopia
+monocular diplopia
+binocular diplopia
+oscillopsia
+vertigo
+lightheadedness
+presyncope
+postural hypotension
+orthostatic intolerance
+syncope
+tachycardia
+bradycardia
+palpitations
+arrhythmia
+atrial fibrillation
+flutter
+premature beats
+skipped beats
+irregular heartbeat
+irregular pulse
+weak pulse
+bounding pulse
+collapsing pulse
+water hammer pulse
+bigeminy
+trigeminy
+couplets
+runs
+salvo
+burst
+episode
+paroxysm
+attack
+spell
+fit
+turn
+dizzy spell
+fainting spell
+anxiety attack
+panic episode
