@@ -136,8 +136,16 @@ class AIOrchestrator:
 
     async def _call_xrayas(self, image_path: str, text: str) -> Dict[str, Any]:
         try:
+            # Read image bytes from the provided image_path and pass them to xrayas
+            image_bytes = None
+            try:
+                with open(image_path, "rb") as f:
+                    image_bytes = f.read()
+            except Exception as e:
+                return {"ok": False, "answer": "", "confidence": 0.0, "error": f"xrayas_file_read_error:{e}"}
+
             response = await asyncio.wait_for(
-                self.xrayas.analyze(image_path, text),
+                self.xrayas.analyze(image_path, text, image_bytes=image_bytes),
                 timeout=self.xrayas_timeout_seconds,
             )
             answer = (response.get("answer", "") or "").strip()
