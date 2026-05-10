@@ -49,8 +49,11 @@ class XrayASService:
         """
         _LOGGER.info("[XrayAS] Analyzing image: %s", image_path)
 
-        if not image_bytes:
+        if image_bytes is None or len(image_bytes) == 0:
+            _LOGGER.error("[XrayAS] Image bytes are empty or None")
             raise ValueError("Image bytes are required for X-ray analysis")
+        
+        _LOGGER.info(f"[XrayAS] Image size: {len(image_bytes)} bytes")
 
         try:
             # Send image to HF Space via Gradio API
@@ -71,11 +74,13 @@ class XrayASService:
                     submit_url,
                     files=files,
                     data=data,
+                                    timeout=60.0,
                 )
                 
                 if submit_response.status_code != 200:
                     _LOGGER.error(f"[XrayAS] HF submission failed: {submit_response.status_code}")
-                    raise HFClientError(f"HF Space returned {submit_response.status_code}")
+                    _LOGGER.error(f"[XrayAS] Response: {submit_response.text[:500]}")
+                    raise HFClientError(f"HF Space returned {submit_response.status_code}: {submit_response.text[:200]}")
                 
                 # Extract event_id from response
                 event_id = submit_response.json().get("event_id")

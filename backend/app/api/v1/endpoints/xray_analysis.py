@@ -21,6 +21,14 @@ async def xray_analysis(
 
     try:
         image_bytes = await image.read()
+        
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Image file is empty")
+        
+        import logging
+        _logger = logging.getLogger(__name__)
+        _logger.info(f"[XRay Endpoint] Received image: {image.filename} ({len(image_bytes)} bytes)")
+        
         result = await xrayas_service_instance.analyze(image.filename, notes, image_bytes)
         
         # Extract findings and confidence
@@ -32,11 +40,17 @@ async def xray_analysis(
         formatted_response = f"X-Ray Analysis:\n{answer}\nConfidence: {confidence_pct}%"
         return PlainTextResponse(content=formatted_response)
     except HFClientError as exc:
+            import logging
+            logging.getLogger(__name__).error(f"[XRay Endpoint] HFClientError: {exc}")
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"status": "error", "message": "ML service unavailable"},
         )
+    except HTTPException:
+        raise
     except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(f"[XRay Endpoint] Error: {exc}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"status": "error", "message": str(exc)},
