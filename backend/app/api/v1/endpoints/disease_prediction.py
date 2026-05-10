@@ -20,12 +20,42 @@ class DiseasePredictor(BaseModel):
     symptoms: str = Field(..., min_length=1, max_length=5000, description="Symptom description")
 
 
+class DiseasePredictionResponse(BaseModel):
+    """Response schema for disease prediction."""
+    status: str
+    prediction: str | None = None
+    xray_results: dict | None = None
+    message: str | None = None
+    details: str | None = None
+
+
+def _parse_hf_response(hf_data: list | dict) -> tuple[str | None, dict | None]:
+    """
+    Parse HF Space response into prediction and xray results.
+    
+    Args:
+        hf_data: Raw response from HF Space (list or dict)
+        
+    Returns:
+        tuple: (prediction_string, xray_results_dict)
+    """
+    if isinstance(hf_data, list) and len(hf_data) > 0:
+        hf_data = hf_data[0]
+    
+    if isinstance(hf_data, dict):
+        prediction = hf_data.get("symptom_result", {}).get("prediction")
+        xray_results = hf_data.get("xray_result")
+        return prediction, xray_results
+    
+    return None, None
+
+
 @router.get('/symptoms')
 async def get_symptoms():
     return {"symptoms": _disease_prediction_service.get_symptoms()}
 
 
-@router.post('/predict-disease')
+@router.post('/predict-disease', response_model=DiseasePredictionResponse)
 async def predict_disease(payload: DiseasePredictor):
     """
     Predict disease from symptom description using HF Space model.
@@ -34,7 +64,7 @@ async def predict_disease(payload: DiseasePredictor):
         payload: Request containing symptom text
         
     Returns:
-        dict: HF Space model prediction response
+        dict: Prediction result with disease name and xray confidence scores separated
     """
     try:
         _LOGGER.info(f"[Disease Prediction] Predicting from symptoms. Length: {len(payload.symptoms)}")
@@ -43,10 +73,16 @@ async def predict_disease(payload: DiseasePredictor):
         
         _LOGGER.info(f"[Disease Prediction] HF Space returned successfully")
         
-        return {
-            "status": "success",
-            "prediction": result
-        }
+        # Parse and separate prediction from xray results
+        prediction, xray_results = _parse_hf_response(result)
+        
+        return DiseasePredictionResponse(
+            status="success",
+            prediction=prediction,
+            xray_results=xray_results,
+            message=None,
+            details=None
+        )
         
     except HFClientError as exc:
         _LOGGER.error(f"[Disease Prediction] HF Client error: {exc}")

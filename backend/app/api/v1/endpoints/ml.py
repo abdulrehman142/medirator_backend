@@ -20,9 +20,31 @@ class PredictRequest(BaseModel):
 class PredictResponse(BaseModel):
     """Response schema for ML prediction."""
     status: str
-    data: dict | list | str | None = None
+    prediction: str | None = None
+    xray_results: dict | None = None
     message: str | None = None
     details: str | None = None
+
+
+def _parse_hf_response(hf_data: list | dict) -> tuple[str | None, dict | None]:
+    """
+    Parse HF Space response into prediction and xray results.
+    
+    Args:
+        hf_data: Raw response from HF Space (list or dict)
+        
+    Returns:
+        tuple: (prediction_string, xray_results_dict)
+    """
+    if isinstance(hf_data, list) and len(hf_data) > 0:
+        hf_data = hf_data[0]
+    
+    if isinstance(hf_data, dict):
+        prediction = hf_data.get("symptom_result", {}).get("prediction")
+        xray_results = hf_data.get("xray_result")
+        return prediction, xray_results
+    
+    return None, None
 
 
 @router.post("/predict", response_model=PredictResponse, summary="Get ML model prediction from HF Space")
@@ -36,7 +58,7 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         payload: Request containing symptom input text
         
     Returns:
-        dict: Contains status, prediction data, and any error message
+        dict: Contains status, prediction (disease name), and xray_results separately
         
     Raises:
         HTTPException: If HF Space API fails
@@ -49,10 +71,14 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         
         _LOGGER.info(f"[ML Endpoint] HF Space returned successfully. Response type: {type(hf_response)}")
         
-        # Return successful response with HF data
+        # Parse and separate prediction from xray results
+        prediction, xray_results = _parse_hf_response(hf_response)
+        
+        # Return successful response with separated data
         return PredictResponse(
             status="success",
-            data=hf_response,
+            prediction=prediction,
+            xray_results=xray_results,
             message=None,
             details=None
         )
