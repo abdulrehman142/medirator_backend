@@ -1,10 +1,12 @@
-"""Lightweight symptom catalog used by the backend symptom endpoint.
+"""Symptom catalog used by the backend symptom endpoint."""
 
-This keeps the backend free of heavy model artifacts while still allowing the
-`/symptom-predictor/symptoms` route to return a usable list in local dev.
-"""
+from __future__ import annotations
 
-DEFAULT_SYMPTOMS: list[str] = [
+import pickle
+from pathlib import Path
+
+
+_FALLBACK_SYMPTOMS: list[str] = [
     "fever",
     "cough",
     "shortness of breath",
@@ -56,6 +58,21 @@ DEFAULT_SYMPTOMS: list[str] = [
     "seizures",
     "fainting",
 ]
+
+
+def _load_symptoms_from_pickle() -> list[str]:
+    symptoms_path = Path(__file__).resolve().parents[2] / "models" / "symptoms_list.pkl"
+    try:
+        with symptoms_path.open("rb") as file_handle:
+            loaded = pickle.load(file_handle)
+        if isinstance(loaded, list) and all(isinstance(item, str) for item in loaded):
+            return loaded
+    except Exception:
+        pass
+    return list(_FALLBACK_SYMPTOMS)
+
+
+DEFAULT_SYMPTOMS: list[str] = _load_symptoms_from_pickle()
 
 
 def get_default_symptoms() -> list[str]:
