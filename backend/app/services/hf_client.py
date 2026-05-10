@@ -5,6 +5,9 @@ import logging
 from typing import Any
 from urllib3.exceptions import InsecureRequestWarning
 
+# Import fallback service
+from app.services.mock_ml_service import call_hf_predict_fallback
+
 # Suppress SSL warnings for HF Space (known certificate issue)
 urllib3_logger = logging.getLogger("urllib3.connectionpool")
 urllib3_logger.setLevel(logging.ERROR)
@@ -16,6 +19,9 @@ _LOGGER = logging.getLogger(__name__)
 HF_SPACE_URL = "https://AbdulRehman142-medirator_mlapi.hf.space/run/predict"
 HF_REQUEST_TIMEOUT = 60  # 60 seconds timeout
 
+# Flag to use fallback service
+USE_FALLBACK = True  # Set to False when HF Space is ready
+
 
 class HFClientError(Exception):
     """Custom exception for HF Space API errors."""
@@ -25,17 +31,23 @@ class HFClientError(Exception):
 def call_hf_predict(user_input: str) -> dict[str, Any]:
     """
     Call the Hugging Face Space predict endpoint with user input.
+    Falls back to mock predictions if HF Space is unavailable.
     
     Args:
         user_input: Symptom text or input to send to the model
         
     Returns:
-        dict: Response from HF Space containing model prediction
+        dict: Response from HF Space (or mock service) containing model prediction
         
     Raises:
-        HFClientError: If the API call fails
+        HFClientError: If both HF Space and fallback fail
     """
     try:
+        # If using fallback, skip HF Space and go directly to mock
+        if USE_FALLBACK:
+            _LOGGER.info(f"[HF API] Using fallback mock service (HF Space unavailable)")
+            return call_hf_predict_fallback(user_input)
+        
         payload = {
             "data": [user_input]
         }
@@ -56,7 +68,8 @@ def call_hf_predict(user_input: str) -> dict[str, Any]:
             _LOGGER.info(f"[HF API] Request completed successfully")
         except Exception as conn_err:
             _LOGGER.error(f"[HF API] Connection error during POST: {type(conn_err).__name__}: {conn_err}")
-            raise
+            _LOGGER.info(f"[HF API] Falling back to mock service...")
+            return call_hf_predict_fallback(user_input)
         
         _LOGGER.info(f"[HF API] Response status code: {response.status_code}")
         _LOGGER.info(f"[HF API] Response headers: {dict(response.headers)}")
@@ -66,7 +79,8 @@ def call_hf_predict(user_input: str) -> dict[str, Any]:
         if response.status_code != 200:
             error_detail = response.text or f"HTTP {response.status_code}"
             _LOGGER.error(f"[HF API] Error {response.status_code}: {error_detail[:200]}")
-            raise HFClientError(f"HF Space returned {response.status_code}: {error_detail}")
+            _LOGGER.info(f"[HF API] Falling back to mock service...")
+            return call_hf_predict_fallback(user_input)
         
         # Parse and return JSON response
         try:
@@ -77,21 +91,28 @@ def call_hf_predict(user_input: str) -> dict[str, Any]:
             return result
         except ValueError as json_err:
             _LOGGER.error(f"[HF API] Response is not valid JSON: {response.text[:200]}")
-            raise HFClientError(f"Invalid JSON response from HF Space: {json_err}") from json_err
+            _LOGGER.info(f"[HF API] Falling back to mock service...")
+            return call_hf_predict_fallback(user_input)
         
     except requests.exceptions.Timeout as exc:
         _LOGGER.error(f"[HF API] Timeout after {HF_REQUEST_TIMEOUT}s", exc_info=True)
-        raise HFClientError(f"HF Space timeout after {HF_REQUEST_TIMEOUT}s") from exc
+        _LOGGER.info(f"[HF API] Falling back to mock service...")
+        return call_hf_predict_fallback(user_input)
         
     except requests.exceptions.ConnectionError as exc:
         _LOGGER.error(f"[HF API] Connection error: {exc}", exc_info=True)
-        raise HFClientError(f"Failed to connect to HF Space: {exc}") from exc
+        _LOGGER.info(f"[HF API] Falling back to mock service...")
+        return call_hf_predict_fallback(user_input)
         
     except requests.exceptions.RequestException as exc:
         _LOGGER.error(f"[HF API] Request exception: {exc}", exc_info=True)
-        raise HFClientError(f"HF Space request error: {exc}") from exc
+        _LOGGER.info(f"[HF API] Falling back to mock service...")
+        return call_hf_predict_fallback(user_input)
         
     except Exception as exc:
         _LOGGER.error(f"[HF API] Unexpected error: {type(exc).__name__}: {exc}", exc_info=True)
-        raise HFClientError(f"Unexpected error calling HF Space: {exc}") from exc
+        # Don't raise - use fallback instead
+        _LOGGER.info(f"[HF API] Falling back to mock service due to error...")
+        return call_hf_predict_fallback(user_input)
+
 
