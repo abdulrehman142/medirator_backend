@@ -3,6 +3,7 @@ uvicorn[standard]
 motor
 pymongo
 pydantic
+pydantic-settings
 python-dotenv
 python-jose[cryptography]
 passlib[bcrypt]
@@ -10,3 +11,7 @@ python-multipart
 redis
 httpx
 email-validator
+certifi
+Pillow
+pypdf
+pytesseract
