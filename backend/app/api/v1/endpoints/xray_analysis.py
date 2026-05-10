@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app.services.hf_client import HFClientError
 from app.services.xrayas_service import xrayas_service_instance
@@ -15,19 +15,22 @@ router = APIRouter()
 async def xray_analysis(
     image: UploadFile = File(...),
     notes: str | None = Form(default=None),
-) -> dict:
+):
     if not image.filename:
         raise HTTPException(status_code=400, detail="Image file is required")
 
     try:
         image_bytes = await image.read()
         result = await xrayas_service_instance.analyze(image.filename, notes, image_bytes)
-        return {
-            "status": "success",
-            "prediction": result.get("raw", result),
-            "confidence": result.get("confidence", 0.0),
-            "answer": result.get("answer", ""),
-        }
+        
+        # Extract findings and confidence
+        answer = result.get("answer", "Unable to analyze image")
+        confidence = result.get("confidence", 0.0)
+        confidence_pct = round(confidence * 100, 1)
+        
+        # Format text response
+        formatted_response = f"X-Ray Analysis:\n{answer}\nConfidence: {confidence_pct}%"
+        return PlainTextResponse(content=formatted_response)
     except HFClientError as exc:
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

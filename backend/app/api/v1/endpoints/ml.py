@@ -2,7 +2,7 @@
 
 import logging
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from app.services.hf_client import call_hf_predict, HFClientError
@@ -69,8 +69,8 @@ def _format_message(prediction: str | None, xray_results: dict | None) -> str:
     return f"Predicted: {prediction} (Confidence: {confidence_pct}%)"
 
 
-@router.post("/predict", response_model=PredictResponse, summary="Get ML model prediction from HF Space")
-async def predict(payload: PredictRequest) -> PredictResponse:
+@router.post("/predict", summary="Get ML model prediction from HF Space")
+async def predict(payload: PredictRequest):
     """
     Get model prediction from Hugging Face Space.
     
@@ -99,13 +99,8 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         # Format user-friendly message
         formatted_message = _format_message(prediction, xray_results)
         
-        # Return successful response with clean data
-        return PredictResponse(
-            status="success",
-            prediction=prediction,
-            message=formatted_message,
-            details=None
-        )
+        # Return formatted text response
+        return PlainTextResponse(content=formatted_message)
         
     except HFClientError as exc:
         _LOGGER.error("[ML Endpoint] HF Client error: %s", exc, exc_info=True)

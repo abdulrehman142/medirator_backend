@@ -2,7 +2,7 @@
 
 import logging
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from app.services.disease_prediction_service import get_disease_prediction_service
@@ -77,7 +77,7 @@ async def get_symptoms():
     return {"symptoms": _disease_prediction_service.get_symptoms()}
 
 
-@router.post('/predict-disease', response_model=DiseasePredictionResponse)
+@router.post('/predict-disease')
 async def predict_disease(payload: DiseasePredictor):
     """
     Predict disease from symptom description using HF Space model.
@@ -101,12 +101,8 @@ async def predict_disease(payload: DiseasePredictor):
         # Format user-friendly message
         formatted_message = _format_message(prediction, xray_results)
         
-        return DiseasePredictionResponse(
-            status="success",
-            prediction=prediction,
-            message=formatted_message,
-            details=None
-        )
+        # Return formatted text response
+        return PlainTextResponse(content=formatted_message)
         
     except HFClientError as exc:
         _LOGGER.error(f"[Disease Prediction] HF Client error: {exc}")
