@@ -13,6 +13,8 @@ async def register(payload: RegisterRequest):
     try:
         service = AuthService(get_database())
         return await service.register(payload)
+    except HTTPException:
+        raise
     except ServerSelectionTimeoutError:
         raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
     except Exception as exc:
@@ -24,6 +26,8 @@ async def login(payload: LoginRequest):
     try:
         service = AuthService(get_database())
         return await service.login(payload)
+    except HTTPException:
+        raise
     except ServerSelectionTimeoutError:
         raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
     except Exception as exc:
@@ -35,6 +39,8 @@ async def refresh(payload: RefreshRequest):
     try:
         service = AuthService(get_database())
         return await service.refresh(payload.refresh_token)
+    except HTTPException:
+        raise
     except ServerSelectionTimeoutError:
         raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
     except Exception as exc:
@@ -47,6 +53,8 @@ async def logout(payload: RefreshRequest):
         service = AuthService(get_database())
         await service.logout(payload.refresh_token)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except HTTPException:
+        raise
     except ServerSelectionTimeoutError:
         raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
     except Exception as exc:
@@ -59,6 +67,8 @@ async def forgot_password(payload: ForgotPasswordRequest):
         service = AuthService(get_database())
         token_or_msg = await service.forgot_password(payload.email)
         return {"message": "Password reset initiated", "debug_token": token_or_msg}
+    except HTTPException:
+        raise
     except ServerSelectionTimeoutError:
         raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
     except Exception as exc:
