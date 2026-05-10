@@ -47,6 +47,29 @@ def _parse_hf_response(hf_data: list | dict) -> tuple[str | None, dict | None]:
     return None, None
 
 
+def _format_message(prediction: str | None, xray_results: dict | None) -> str:
+    """
+    Format a clean message with prediction and confidence.
+    
+    Args:
+        prediction: Disease prediction string
+        xray_results: X-ray confidence scores
+        
+    Returns:
+        str: Formatted message with prediction and confidence
+    """
+    if not prediction:
+        return "Unable to determine prediction"
+    
+    # Get max confidence from xray results
+    max_confidence = 0.0
+    if xray_results and isinstance(xray_results, dict):
+        max_confidence = max(xray_results.values()) if xray_results else 0.0
+    
+    confidence_pct = round(max_confidence * 100, 1)
+    return f"Predicted: {prediction} (Confidence: {confidence_pct}%)"
+
+
 @router.post("/predict", response_model=PredictResponse, summary="Get ML model prediction from HF Space")
 async def predict(payload: PredictRequest) -> PredictResponse:
     """
@@ -74,12 +97,15 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         # Parse and separate prediction from xray results
         prediction, xray_results = _parse_hf_response(hf_response)
         
+        # Format user-friendly message
+        formatted_message = _format_message(prediction, xray_results)
+        
         # Return successful response with separated data
         return PredictResponse(
             status="success",
             prediction=prediction,
             xray_results=xray_results,
-            message=None,
+            message=formatted_message,
             details=None
         )
         
