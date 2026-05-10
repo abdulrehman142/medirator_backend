@@ -2,20 +2,21 @@
 
 from typing import Any
 
+from app.services.hf_client import call_hf_predict
 from app.services.symptom_catalog import get_default_symptoms
 
 
 class DiseasePredictionService:
-    """Lightweight service used when models are not available."""
+    """Service for symptom catalog and disease prediction calls."""
 
     def __init__(self) -> None:
-        self.is_ready = False
+        self.is_ready = True
 
     def get_symptoms(self) -> list[str]:
         return get_default_symptoms()
 
-    def predict_disease(self, input_symptoms: list[str]) -> dict[str, Any]:
-        return {"message": "model_service_not_available"}
+    async def predict_disease(self, input_symptoms: list[str]) -> dict[str, Any] | list[Any]:
+        return await call_hf_predict(" ".join(input_symptoms))
 
 
 def get_disease_prediction_service() -> DiseasePredictionService:

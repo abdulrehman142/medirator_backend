@@ -137,7 +137,7 @@ class AIOrchestrator:
     async def _call_xrayas(self, image_path: str, text: str) -> Dict[str, Any]:
         try:
             response = await asyncio.wait_for(
-                asyncio.to_thread(self.xrayas.analyze, image_path, text),
+                self.xrayas.analyze(image_path, text),
                 timeout=self.xrayas_timeout_seconds,
             )
             answer = (response.get("answer", "") or "").strip()

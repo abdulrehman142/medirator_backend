@@ -2,6 +2,7 @@
 
 import logging
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.services.disease_prediction_service import get_disease_prediction_service
@@ -38,8 +39,7 @@ async def predict_disease(payload: DiseasePredictor):
     try:
         _LOGGER.info(f"[Disease Prediction] Predicting from symptoms. Length: {len(payload.symptoms)}")
         
-        # Call HF Space API for disease prediction
-        result = call_hf_predict(payload.symptoms)
+        result = await call_hf_predict(payload.symptoms)
         
         _LOGGER.info(f"[Disease Prediction] HF Space returned successfully")
         
@@ -50,14 +50,10 @@ async def predict_disease(payload: DiseasePredictor):
         
     except HFClientError as exc:
         _LOGGER.error(f"[Disease Prediction] HF Client error: {exc}")
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "status": "error",
-                "message": "Failed to connect to prediction model",
-                "details": str(exc)
-            }
-        ) from exc
+            content={"status": "error", "message": "ML service unavailable"},
+        )
         
     except Exception as exc:
         _LOGGER.error(f"[Disease Prediction] Unexpected error: {exc}")

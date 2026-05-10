@@ -2,6 +2,7 @@
 
 import logging
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.services.hf_client import call_hf_predict, HFClientError
@@ -44,8 +45,7 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         _LOGGER.info(f"[ML Endpoint] Prediction request received. Input length: {len(payload.input)}")
         _LOGGER.info(f"[ML Endpoint] Calling HF Space...")
         
-        # Call HF Space API (sync)
-        hf_response = call_hf_predict(payload.input)
+        hf_response = await call_hf_predict(payload.input)
         
         _LOGGER.info(f"[ML Endpoint] HF Space returned successfully. Response type: {type(hf_response)}")
         
@@ -58,17 +58,11 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         )
         
     except HFClientError as exc:
-        error_msg = str(exc)
-        _LOGGER.error(f"[ML Endpoint] HF Client error: {error_msg}", exc_info=True)
-        
-        raise HTTPException(
+        _LOGGER.error("[ML Endpoint] HF Client error: %s", exc, exc_info=True)
+        return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "status": "error",
-                "message": "Failed to connect to Hugging Face model",
-                "details": error_msg
-            }
-        ) from exc
+            content={"status": "error", "message": "ML service unavailable"},
+        )
         
     except Exception as exc:
         error_msg = f"{type(exc).__name__}: {exc}"

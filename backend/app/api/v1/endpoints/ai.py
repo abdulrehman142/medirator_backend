@@ -2,6 +2,7 @@
 
 import logging
 from fastapi import APIRouter, Form, UploadFile, File, HTTPException, status
+from fastapi.responses import JSONResponse
 
 from app.services.hf_client import call_hf_predict, HFClientError
 
@@ -30,8 +31,7 @@ async def handle_query(prompt: str = Form(...), image: UploadFile = File(None)):
         
         _LOGGER.info(f"[AI Endpoint] Processing query. Length: {len(input_text)}")
         
-        # Call HF Space API for inference
-        result = call_hf_predict(input_text)
+        result = await call_hf_predict(input_text)
         
         _LOGGER.info(f"[AI Endpoint] HF Space inference successful")
         
@@ -43,14 +43,10 @@ async def handle_query(prompt: str = Form(...), image: UploadFile = File(None)):
         
     except HFClientError as exc:
         _LOGGER.error(f"[AI Endpoint] HF Client error: {exc}")
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "status": "error",
-                "message": "Failed to connect to AI model",
-                "details": str(exc)
-            }
-        ) from exc
+            content={"status": "error", "message": "ML service unavailable"},
+        )
         
     except Exception as exc:
         _LOGGER.error(f"[AI Endpoint] Unexpected error: {exc}")

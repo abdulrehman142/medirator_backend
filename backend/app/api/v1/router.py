@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import admin, appointments, auth, chat, clinical, disease_prediction, feedback, ml, reports, security, users
+from app.api.v1.endpoints import admin, appointments, auth, chat, clinical, disease_prediction, feedback, ml, reports, security, users, xray_analysis
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -14,4 +14,6 @@ api_router.include_router(security.router, prefix="/security", tags=["security"]
 api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(disease_prediction.router, prefix="/symptom-predictor", tags=["symptom-predictor"])
 api_router.include_router(disease_prediction.router, prefix="/disease-prediction", tags=["disease-prediction"])
+api_router.include_router(disease_prediction.router, prefix="", tags=["disease-prediction"])
 api_router.include_router(ml.router, prefix="/ml", tags=["ml"])
+api_router.include_router(xray_analysis.router, prefix="", tags=["xray-analysis"])
