@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 14
     password_reset_token_expire_minutes: int = 30
 
-    allowed_origins: str = "http://localhost:5173,http://localhost:3000"
+    allowed_origins: str = "http://localhost:5173,http://localhost:3000,https://medirator.netlify.app"
     rate_limit_per_minute: int = 120
     failed_login_limit: int = 5
     block_duration_minutes: int = 30
@@ -58,7 +58,11 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins_list(self) -> list[str]:
-        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+        origins = [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+        netlify_origin = "https://medirator.netlify.app"
+        if netlify_origin not in origins:
+            origins.append(netlify_origin)
+        return origins
 
 
 @lru_cache
