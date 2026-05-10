@@ -69,7 +69,7 @@ def _format_message(prediction: str | None, xray_results: dict | None) -> str:
         max_confidence = max(xray_results.values()) if xray_results else 0.0
     
     confidence_pct = round(max_confidence * 100, 1)
-    return f"Predicted: {prediction} (Confidence: {confidence_pct}%)"
+    return f"Predicted: {prediction}\nConfidence: {confidence_pct}%"
 
 
 @router.get('/symptoms')
