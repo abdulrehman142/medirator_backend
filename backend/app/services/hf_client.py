@@ -3,6 +3,12 @@
 import requests
 import logging
 from typing import Any
+from urllib3.exceptions import InsecureRequestWarning
+
+# Suppress SSL warnings for HF Space (known certificate issue)
+urllib3_logger = logging.getLogger("urllib3.connectionpool")
+urllib3_logger.setLevel(logging.ERROR)
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +43,13 @@ def call_hf_predict(user_input: str) -> dict[str, Any]:
         _LOGGER.info(f"[HF API] Sending request to: {HF_SPACE_URL}")
         _LOGGER.debug(f"[HF API] Payload: {payload}")
         
-        response = requests.post(HF_SPACE_URL, json=payload, timeout=HF_REQUEST_TIMEOUT)
+        # Disable SSL verification for HF Space (certificate hostname mismatch workaround)
+        response = requests.post(
+            HF_SPACE_URL, 
+            json=payload, 
+            timeout=HF_REQUEST_TIMEOUT,
+            verify=False  # Bypass SSL verification for HF Space
+        )
         
         _LOGGER.info(f"[HF API] Response status code: {response.status_code}")
         _LOGGER.debug(f"[HF API] Response body: {response.text[:500]}")
