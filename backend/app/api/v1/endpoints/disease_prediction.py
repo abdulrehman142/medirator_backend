@@ -2,7 +2,7 @@
 
 import logging
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.services.disease_prediction_service import get_disease_prediction_service
@@ -24,7 +24,7 @@ class DiseasePredictionResponse(BaseModel):
     """Response schema for disease prediction."""
     status: str
     prediction: str | None = None
-    message: str | None = None
+    confidence: float | None = None
     details: str | None = None
 
 
@@ -77,8 +77,8 @@ async def get_symptoms():
     return {"symptoms": _disease_prediction_service.get_symptoms()}
 
 
-@router.post('/predict-disease')
-async def predict_disease(payload: DiseasePredictor):
+@router.post('/predict-disease', response_model=DiseasePredictionResponse)
+async def predict_disease(payload: DiseasePredictor) -> DiseasePredictionResponse:
     """
     Predict disease from symptom description using HF Space model.
     
@@ -98,11 +98,20 @@ async def predict_disease(payload: DiseasePredictor):
         # Parse and separate prediction from xray results
         prediction, xray_results = _parse_hf_response(result)
         
-        # Format user-friendly message
-        formatted_message = _format_message(prediction, xray_results)
+        # Calculate confidence from xray results
+        confidence = 0.0
+        if xray_results and isinstance(xray_results, dict):
+            scores = [v for v in xray_results.values() if isinstance(v, (int, float))]
+            if scores:
+                confidence = max(scores)
         
-        # Return formatted text response
-        return PlainTextResponse(content=formatted_message)
+        # Return structured response
+        return DiseasePredictionResponse(
+            status="success",
+            prediction=prediction,
+            confidence=confidence,
+            details=None
+        )
         
     except HFClientError as exc:
         _LOGGER.error(f"[Disease Prediction] HF Client error: {exc}")

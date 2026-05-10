@@ -15,6 +15,7 @@ class MedicalHistoryItem(BaseModel):
     diagnosis: str = Field(min_length=2, max_length=400)
     chronic_conditions: list[str] = []
     allergies: list[str] = []
+    family_history: list[str] = []
 
 
 class ClinicalNoteCreate(BaseModel):

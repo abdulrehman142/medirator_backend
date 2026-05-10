@@ -18,6 +18,7 @@ class ClinicalService:
                     "diagnosis": payload.diagnosis,
                     "chronic_conditions": payload.chronic_conditions,
                     "allergies": payload.allergies,
+                    "family_history": payload.family_history,
                     "updated_at": utcnow(),
                 },
                 "$setOnInsert": {"created_at": utcnow()},

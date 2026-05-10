@@ -2,7 +2,7 @@
 
 import logging
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.services.hf_client import call_hf_predict, HFClientError
@@ -21,7 +21,7 @@ class PredictResponse(BaseModel):
     """Response schema for ML prediction."""
     status: str
     prediction: str | None = None
-    message: str | None = None
+    confidence: float | None = None
     details: str | None = None
 
 
@@ -69,8 +69,8 @@ def _format_message(prediction: str | None, xray_results: dict | None) -> str:
     return f"Predicted: {prediction}\nConfidence: {confidence_pct}%"
 
 
-@router.post("/predict", summary="Get ML model prediction from HF Space")
-async def predict(payload: PredictRequest):
+@router.post("/predict", response_model=PredictResponse, summary="Get ML model prediction from HF Space")
+async def predict(payload: PredictRequest) -> PredictResponse:
     """
     Get model prediction from Hugging Face Space.
     
@@ -96,11 +96,20 @@ async def predict(payload: PredictRequest):
         # Parse and separate prediction from xray results
         prediction, xray_results = _parse_hf_response(hf_response)
         
-        # Format user-friendly message
-        formatted_message = _format_message(prediction, xray_results)
+        # Calculate confidence from xray results
+        confidence = 0.0
+        if xray_results and isinstance(xray_results, dict):
+            scores = [v for v in xray_results.values() if isinstance(v, (int, float))]
+            if scores:
+                confidence = max(scores)
         
-        # Return formatted text response
-        return PlainTextResponse(content=formatted_message)
+        # Return structured response
+        return PredictResponse(
+            status="success",
+            prediction=prediction,
+            confidence=confidence,
+            details=None
+        )
         
     except HFClientError as exc:
         _LOGGER.error("[ML Endpoint] HF Client error: %s", exc, exc_info=True)
