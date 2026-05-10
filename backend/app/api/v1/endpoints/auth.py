@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Header, HTTPException, Response, status
 from pymongo.errors import ServerSelectionTimeoutError
 
 from app.db.mongo import get_database
@@ -6,6 +6,19 @@ from app.schemas.auth import ForgotPasswordRequest, LoginRequest, RefreshRequest
 from app.services.auth_service import AuthService
 
 router = APIRouter()
+
+
+def _extract_refresh_token(payload: RefreshRequest | None, authorization: str | None) -> str:
+    if payload and payload.refresh_token:
+        return payload.refresh_token
+
+    if authorization:
+        value = authorization.strip()
+        if value.lower().startswith("bearer "):
+            return value.split(" ", 1)[1].strip()
+        return value
+
+    raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 
 @router.post("/register", response_model=TokenPair)
@@ -35,10 +48,11 @@ async def login(payload: LoginRequest):
 
 
 @router.post("/refresh", response_model=TokenPair)
-async def refresh(payload: RefreshRequest):
+async def refresh(payload: RefreshRequest | None = None, authorization: str | None = Header(default=None)):
     try:
         service = AuthService(get_database())
-        return await service.refresh(payload.refresh_token)
+        refresh_token = _extract_refresh_token(payload, authorization)
+        return await service.refresh(refresh_token)
     except HTTPException:
         raise
     except ServerSelectionTimeoutError:
@@ -48,10 +62,11 @@ async def refresh(payload: RefreshRequest):
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(payload: RefreshRequest):
+async def logout(payload: RefreshRequest | None = None, authorization: str | None = Header(default=None)):
     try:
         service = AuthService(get_database())
-        await service.logout(payload.refresh_token)
+        refresh_token = _extract_refresh_token(payload, authorization)
+        await service.logout(refresh_token)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except HTTPException:
         raise

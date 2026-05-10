@@ -226,4 +226,4 @@ class AuthService:
                 "updated_at": utcnow(),
             }
         )
-        return TokenPair(access_token=access_token)
+        return TokenPair(access_token=access_token, refresh_token=refresh_token)
