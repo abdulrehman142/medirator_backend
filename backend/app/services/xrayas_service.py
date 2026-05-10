@@ -9,20 +9,16 @@ from __future__ import annotations
 import logging
 import base64
 from typing import Any
-import httpx
 
-from app.services.hf_client import HFClientError
+from app.services.hf_client import call_hf_predict, HFClientError
 
 _LOGGER = logging.getLogger(__name__)
-
-HF_SPACE_URL = "https://abdulrehman142-medirator-mlapi.hf.space"
 
 
 class XrayASService:
     def __init__(self) -> None:
         self.ready = True
         self.load_error = None
-        self.hf_space_url = HF_SPACE_URL
         _LOGGER.info("[XrayAS] Service initialized with HF Space backend")
 
     def load_model(self) -> None:
@@ -37,7 +33,7 @@ class XrayASService:
         image_bytes: bytes | None = None,
     ) -> dict[str, Any]:
         """
-        Analyze X-ray image using HF Space model with actual image file.
+        Analyze X-ray image using HF Space model via predict endpoint.
         
         Args:
             image_path: Path to X-ray image file
@@ -56,72 +52,54 @@ class XrayASService:
         _LOGGER.info(f"[XrayAS] Image size: {len(image_bytes)} bytes")
 
         try:
-            # Send image to HF Space via Gradio API
-            async with httpx.AsyncClient(verify=False, timeout=60.0) as client:
-                # Prepare multipart form data with image file
-                files = {
-                    'file': (image_path, image_bytes, 'image/jpeg'),
-                }
-                data = {}
-                if text:
-                    data['notes'] = text
-                
-                # Submit image to HF Space
-                submit_url = f"{self.hf_space_url}/gradio_api/call/xray_predict"
-                _LOGGER.info(f"[XrayAS] Submitting image to {submit_url}")
-                
-                submit_response = await client.post(
-                    submit_url,
-                    files=files,
-                    data=data,
-                                    timeout=60.0,
-                )
-                
-                if submit_response.status_code != 200:
-                    _LOGGER.error(f"[XrayAS] HF submission failed: {submit_response.status_code}")
-                    _LOGGER.error(f"[XrayAS] Response: {submit_response.text[:500]}")
-                    raise HFClientError(f"HF Space returned {submit_response.status_code}: {submit_response.text[:200]}")
-                
-                # Extract event_id from response
-                event_id = submit_response.json().get("event_id")
-                if not event_id:
-                    _LOGGER.error("[XrayAS] No event_id in response")
-                    raise HFClientError("No event_id from HF Space")
-                
-                _LOGGER.info(f"[XrayAS] Got event_id: {event_id}, polling for results")
-                
-                # Poll for results
-                poll_url = f"{self.hf_space_url}/gradio_api/call/xray_predict/{event_id}"
-                max_polls = 30
-                for attempt in range(max_polls):
-                    poll_response = await client.get(poll_url)
-                    
-                    if poll_response.status_code == 200:
-                        # Parse streaming response
-                        for line in poll_response.text.split('\n'):
-                            if line.startswith('data:'):
-                                import json
-                                data_str = line[5:].strip()
-                                if data_str:
-                                    result_data = json.loads(data_str)
-                                    return {
-                                        "ok": True,
-                                        "answer": str(result_data),
-                                        "confidence": 0.85,
-                                        "model_name": "HF Space X-Ray",
-                                        "raw": result_data,
-                                    }
-                    
-                    import asyncio
-                    await asyncio.sleep(1)
-                
-                raise HFClientError("Timeout waiting for HF Space response")
-                
-        except HFClientError:
+            # Encode image as base64 and send to predict endpoint
+            encoded_image = base64.b64encode(image_bytes).decode('utf-8')
+            
+            # Create input text with image and optional notes
+            input_text = f"xray_analysis image_base64={encoded_image[:10000]}"
+            if text:
+                input_text += f" notes={text.strip()}"
+            
+            _LOGGER.info("[XrayAS] Sending to predict endpoint with image")
+            result = await call_hf_predict(input_text)
+            
+            # Parse result
+            answer = str(result)
+            confidence = 0.82
+            
+            if isinstance(result, list) and len(result) > 0:
+                result = result[0]
+            
+            if isinstance(result, dict):
+                if "xray_result" in result:
+                    # Extract from xray_result confidence scores
+                    xray_data = result["xray_result"]
+                    if isinstance(xray_data, dict):
+                        # Get findings from dict values
+                        scores = [v for v in xray_data.values() if isinstance(v, (int, float))]
+                        if scores:
+                            confidence = max(scores)
+                            # Format top findings
+                            top_findings = sorted(xray_data.items(), key=lambda x: x[1], reverse=True)[:3]
+                            answer = f"X-ray findings: {', '.join([f'{k}: {round(v*100,1)}%' for k,v in top_findings])}"
+                elif "symptom_result" in result:
+                    answer = result["symptom_result"].get("prediction", "Unable to analyze image")
+            
+            return {
+                "ok": True,
+                "answer": answer,
+                "confidence": confidence,
+                "model_name": "HF Space",
+                "raw": result,
+            }
+            
+        except HFClientError as exc:
+            _LOGGER.error(f"[XrayAS] HF Client error: {exc}")
             raise
         except Exception as exc:
-            _LOGGER.error(f"[XrayAS] Error analyzing image: {exc}")
+            _LOGGER.error(f"[XrayAS] Error analyzing image: {exc}", exc_info=True)
             raise HFClientError(f"X-ray analysis failed: {exc}") from exc
 
 
+# Singleton instance
 xrayas_service_instance = XrayASService()
