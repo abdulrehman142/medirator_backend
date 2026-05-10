@@ -12,17 +12,46 @@ from app.schemas.ai import ChatResponse
 from app.vision import maybe_image_path
 from app.voice import transcribe_audio_file
 from app.core.config import get_settings
+from app.core.security import hash_password
 from app.db.indexes import ensure_indexes
 from app.db.mongo import close_mongo, get_database, init_mongo
 from app.db.redis import close_redis
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.request_log import RequestLogMiddleware
+from app.schemas.user import Role, UserCreate
+from app.services.user_service import UserService
 from app.utils.logger import configure_logging
+from app.utils.time import utcnow
 
 # Ensure .env is loaded even when uvicorn runs
 load_dotenv()
 
 settings = get_settings()
+
+async def _bootstrap_admin(db) -> None:
+    """Create hardcoded admin user if it doesn't exist"""
+    ADMIN_EMAIL = "mediratorinfo@gmail.com"
+    ADMIN_PASSWORD = "rehman@16@"
+    
+    existing = await db.users.find_one({"email": ADMIN_EMAIL.lower()})
+    if existing:
+        print(f"✓ Admin user {ADMIN_EMAIL} already exists")
+        return
+    
+    try:
+        user_service = UserService(db)
+        user = await user_service.create_user(
+            UserCreate(
+                email=ADMIN_EMAIL,
+                password=ADMIN_PASSWORD,
+                full_name="Admin",
+                role=Role.ADMIN,
+            ),
+            hash_password(ADMIN_PASSWORD),
+        )
+        print(f"✓ Created hardcoded admin user: {ADMIN_EMAIL}")
+    except Exception as e:
+        print(f"⚠ Failed to create hardcoded admin: {e}")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -30,6 +59,7 @@ async def lifespan(_: FastAPI):
     try:
         db = init_mongo()
         await ensure_indexes(db)
+        await _bootstrap_admin(db)
     except Exception as exc:
         print(f"Warning: MongoDB startup checks skipped: {exc}")
     
