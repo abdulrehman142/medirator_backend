@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pymongo.errors import ServerSelectionTimeoutError
 
 from app.core.deps import get_current_user
 from app.db.mongo import get_database
@@ -12,17 +13,27 @@ router = APIRouter()
 
 @router.post("", response_model=FeedbackPublic)
 async def create_feedback(payload: FeedbackCreateInput, current_user: UserPublic = Depends(get_current_user)):
-    db = get_database()
-    create_payload = FeedbackCreate(**payload.model_dump(), user_id=current_user.id, role=current_user.role.value)
-    feedback = await FeedbackService(db).create(create_payload)
-    await SecurityService(db).log_audit("feedback.create", actor_id=current_user.id, target_id=feedback.id)
-    return feedback
+    try:
+        db = get_database()
+        create_payload = FeedbackCreate(**payload.model_dump(), user_id=current_user.id, role=current_user.role.value)
+        feedback = await FeedbackService(db).create(create_payload)
+        await SecurityService(db).log_audit("feedback.create", actor_id=current_user.id, target_id=feedback.id)
+        return feedback
+    except ServerSelectionTimeoutError:
+        raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to create feedback: {str(exc)}")
 
 
 @router.get("", response_model=list[FeedbackPublic])
 async def list_feedback(target_type: FeedbackTarget | None = None, role: str | None = None):
-    db = get_database()
-    return await FeedbackService(db).list(role=role, target_type=target_type)
+    try:
+        db = get_database()
+        return await FeedbackService(db).list(role=role, target_type=target_type)
+    except ServerSelectionTimeoutError:
+        raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to list feedback: {str(exc)}")
 
 
 @router.patch("/{feedback_id}", response_model=FeedbackPublic)
@@ -31,7 +42,12 @@ async def update_feedback(
     payload: FeedbackUpdate,
     current_user: UserPublic = Depends(get_current_user),
 ):
-    db = get_database()
-    updated = await FeedbackService(db).update_own(feedback_id, current_user.id, payload)
-    await SecurityService(db).log_audit("feedback.update", actor_id=current_user.id, target_id=feedback_id)
-    return updated
+    try:
+        db = get_database()
+        updated = await FeedbackService(db).update_own(feedback_id, current_user.id, payload)
+        await SecurityService(db).log_audit("feedback.update", actor_id=current_user.id, target_id=feedback_id)
+        return updated
+    except ServerSelectionTimeoutError:
+        raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to update feedback: {str(exc)}")

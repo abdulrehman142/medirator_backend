@@ -61,8 +61,11 @@ async def lifespan(_: FastAPI):
     if label_encoder_url:
         download_file(label_encoder_url, "models/label_encoder.pkl")
     
-    db = init_mongo()
-    await ensure_indexes(db)
+    try:
+        db = init_mongo()
+        await ensure_indexes(db)
+    except Exception as exc:
+        print(f"Warning: MongoDB startup checks skipped: {exc}")
     
     yield
     await close_mongo()

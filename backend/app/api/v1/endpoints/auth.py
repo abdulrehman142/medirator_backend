@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from pymongo.errors import ServerSelectionTimeoutError
 
 from app.db.mongo import get_database
 from app.schemas.auth import ForgotPasswordRequest, LoginRequest, RefreshRequest, RegisterRequest, ResetPasswordRequest, TokenPair
@@ -9,34 +10,59 @@ router = APIRouter()
 
 @router.post("/register", response_model=TokenPair)
 async def register(payload: RegisterRequest):
-    service = AuthService(get_database())
-    return await service.register(payload)
+    try:
+        service = AuthService(get_database())
+        return await service.register(payload)
+    except ServerSelectionTimeoutError:
+        raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(exc)}")
 
 
 @router.post("/login", response_model=TokenPair)
 async def login(payload: LoginRequest):
-    service = AuthService(get_database())
-    return await service.login(payload)
+    try:
+        service = AuthService(get_database())
+        return await service.login(payload)
+    except ServerSelectionTimeoutError:
+        raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(exc)}")
 
 
 @router.post("/refresh", response_model=TokenPair)
 async def refresh(payload: RefreshRequest):
-    service = AuthService(get_database())
-    return await service.refresh(payload.refresh_token)
+    try:
+        service = AuthService(get_database())
+        return await service.refresh(payload.refresh_token)
+    except ServerSelectionTimeoutError:
+        raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Refresh failed: {str(exc)}")
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(payload: RefreshRequest):
-    service = AuthService(get_database())
-    await service.logout(payload.refresh_token)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    try:
+        service = AuthService(get_database())
+        await service.logout(payload.refresh_token)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except ServerSelectionTimeoutError:
+        raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Logout failed: {str(exc)}")
 
 
 @router.post("/forgot-password")
 async def forgot_password(payload: ForgotPasswordRequest):
-    service = AuthService(get_database())
-    token_or_msg = await service.forgot_password(payload.email)
-    return {"message": "Password reset initiated", "debug_token": token_or_msg}
+    try:
+        service = AuthService(get_database())
+        token_or_msg = await service.forgot_password(payload.email)
+        return {"message": "Password reset initiated", "debug_token": token_or_msg}
+    except ServerSelectionTimeoutError:
+        raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Password reset failed: {str(exc)}")
 
 
 @router.post("/reset-password")
