@@ -42,6 +42,7 @@ async def predict(payload: PredictRequest) -> PredictResponse:
     """
     try:
         _LOGGER.info(f"[ML Endpoint] Prediction request received. Input length: {len(payload.input)}")
+        _LOGGER.info(f"[ML Endpoint] Calling HF Space...")
         
         # Call HF Space API (sync)
         hf_response = call_hf_predict(payload.input)
@@ -58,7 +59,7 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         
     except HFClientError as exc:
         error_msg = str(exc)
-        _LOGGER.error(f"[ML Endpoint] HF Client error: {error_msg}")
+        _LOGGER.error(f"[ML Endpoint] HF Client error: {error_msg}", exc_info=True)
         
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -71,7 +72,7 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         
     except Exception as exc:
         error_msg = f"{type(exc).__name__}: {exc}"
-        _LOGGER.error(f"[ML Endpoint] Unexpected error: {error_msg}")
+        _LOGGER.error(f"[ML Endpoint] Unexpected error: {error_msg}", exc_info=True)
         
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
