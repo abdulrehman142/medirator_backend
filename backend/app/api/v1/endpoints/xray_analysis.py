@@ -40,8 +40,8 @@ async def xray_analysis(
         formatted_response = f"X-Ray Analysis:\n{answer}\nConfidence: {confidence_pct}%"
         return PlainTextResponse(content=formatted_response)
     except HFClientError as exc:
-            import logging
-            logging.getLogger(__name__).error(f"[XRay Endpoint] HFClientError: {exc}")
+        import logging
+        logging.getLogger(__name__).error(f"[XRay Endpoint] HFClientError: {exc}")
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"status": "error", "message": "ML service unavailable"},
