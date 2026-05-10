@@ -42,7 +42,7 @@ pip-delete-this-directory.txt
 # 🤖 ML / MODELS / CACHE
 ########################################
 storage/
-models/
+/backend/models/
 hf_cache/
 .cache/
 huggingface/
