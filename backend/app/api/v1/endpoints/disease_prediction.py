@@ -24,7 +24,6 @@ class DiseasePredictionResponse(BaseModel):
     """Response schema for disease prediction."""
     status: str
     prediction: str | None = None
-    xray_results: dict | None = None
     message: str | None = None
     details: str | None = None
 
@@ -105,7 +104,6 @@ async def predict_disease(payload: DiseasePredictor):
         return DiseasePredictionResponse(
             status="success",
             prediction=prediction,
-            xray_results=xray_results,
             message=formatted_message,
             details=None
         )

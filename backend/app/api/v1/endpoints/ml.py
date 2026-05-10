@@ -21,7 +21,6 @@ class PredictResponse(BaseModel):
     """Response schema for ML prediction."""
     status: str
     prediction: str | None = None
-    xray_results: dict | None = None
     message: str | None = None
     details: str | None = None
 
@@ -100,11 +99,10 @@ async def predict(payload: PredictRequest) -> PredictResponse:
         # Format user-friendly message
         formatted_message = _format_message(prediction, xray_results)
         
-        # Return successful response with separated data
+        # Return successful response with clean data
         return PredictResponse(
             status="success",
             prediction=prediction,
-            xray_results=xray_results,
             message=formatted_message,
             details=None
         )
