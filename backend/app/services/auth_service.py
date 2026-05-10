@@ -108,7 +108,15 @@ class AuthService:
                 )
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
 
-        if not verify_password(payload.password, user["hashed_password"]):
+        try:
+            password_matches = verify_password(payload.password, user["hashed_password"])
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Password verification backend unavailable. Please try again later.",
+            ) from exc
+
+        if not password_matches:
             try:
                 failures = await redis_client.incr(fail_key)
                 await redis_client.expire(fail_key, settings.block_duration_minutes * 60)
