@@ -66,10 +66,17 @@ class AuthService:
         normalized_email = payload.email.strip().lower()
         fail_key = f"failed-login:{normalized_email}"
 
+        async def _redis_call(method: str, *args, **kwargs) -> None:
+            try:
+                await getattr(redis_client, method)(*args, **kwargs)
+            except Exception:
+                # Fail open if Redis is unavailable so auth itself still works.
+                return
+
         user = await self.user_service.get_user_by_email(normalized_email)
         if not user:
-            await redis_client.incr(fail_key)
-            await redis_client.expire(fail_key, settings.block_duration_minutes * 60)
+            await _redis_call("incr", fail_key)
+            await _redis_call("expire", fail_key, settings.block_duration_minutes * 60)
             await self.security_service.log_security_event("failed_login", "Unknown email", None)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
@@ -102,8 +109,11 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
 
         if not verify_password(payload.password, user["hashed_password"]):
-            failures = await redis_client.incr(fail_key)
-            await redis_client.expire(fail_key, settings.block_duration_minutes * 60)
+            try:
+                failures = await redis_client.incr(fail_key)
+                await redis_client.expire(fail_key, settings.block_duration_minutes * 60)
+            except Exception:
+                failures = 0
             if failures >= settings.failed_login_limit:
                 await self.db.users.update_one(
                     {"_id": ObjectId(user["id"])},
@@ -113,7 +123,10 @@ class AuthService:
             await self.security_service.log_security_event("failed_login", "Wrong password", user["id"])
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-        await redis_client.delete(fail_key)
+        try:
+            await redis_client.delete(fail_key)
+        except Exception:
+            pass
         token_pair = await self._issue_tokens(user["id"], user["role"])
         await self.security_service.log_audit(action="auth.login", actor_id=user["id"])
         return token_pair
