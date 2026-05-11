@@ -88,6 +88,16 @@ print(f"[STARTUP] CORS enabled for {len(cors_origins)} origins:")
 for o in cors_origins:
     print(f"  ✓ {o}")
 
+# Custom middleware to debug CORS issues
+@app.middleware("http")
+async def debug_cors_middleware(request: Request, call_next):
+    origin = request.headers.get("origin")
+    if origin:
+        print(f"[CORS-DEBUG] Request from origin: {origin}")
+        print(f"[CORS-DEBUG] Allowed: {origin in cors_origins}")
+    response = await call_next(request)
+    return response
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
