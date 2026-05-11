@@ -14,6 +14,6 @@ api_router.include_router(security.router, prefix="/security", tags=["security"]
 api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(disease_prediction.router, prefix="/symptom-predictor", tags=["symptom-predictor"])
 api_router.include_router(disease_prediction.router, prefix="/disease-prediction", tags=["disease-prediction"])
-api_router.include_router(disease_prediction.router, prefix="", tags=["disease-prediction"])
+api_router.include_router(disease_prediction.router, prefix="/predict", tags=["predict"])
 api_router.include_router(ml.router, prefix="/ml", tags=["ml"])
 api_router.include_router(xray_analysis.router, prefix="", tags=["xray-analysis"])
