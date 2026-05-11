@@ -56,7 +56,6 @@ async def _bootstrap_admin(db) -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_logging()
-    print(f"✓ CORS enabled for origins: {settings.allowed_origins_list}")
     try:
         db = init_mongo()
         await ensure_indexes(db)
@@ -71,14 +70,32 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title=settings.app_name, debug=settings.debug, lifespan=lifespan)
 
+# Build and validate CORS origins - CRITICAL for admin endpoints
+cors_origins = [
+    "https://medirator.netlify.app",
+    "http://localhost:3000",
+    "http://localhost:5173", 
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+]
+# Add any additional origins from config
+for origin in settings.allowed_origins.split(","):
+    origin = origin.strip()
+    if origin and origin not in cors_origins:
+        cors_origins.append(origin)
+
+print(f"[STARTUP] CORS enabled for {len(cors_origins)} origins:")
+for o in cors_origins:
+    print(f"  ✓ {o}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins_list,
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+    allow_headers=["Content-Type", "Authorization"],
     expose_headers=["*"],
-    max_age=3600,
+    max_age=7200,
 )
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(RequestLogMiddleware)
