@@ -24,7 +24,10 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 14
     password_reset_token_expire_minutes: int = 30
 
-    allowed_origins: str = "http://localhost:5173,http://localhost:3000,https://medirator.netlify.app"
+    allowed_origins: str = Field(
+        default="http://localhost:5173,http://localhost:3000,https://medirator.netlify.app",
+        validation_alias=AliasChoices("allowed_origins", "ALLOWED_ORIGINS"),
+    )
     rate_limit_per_minute: int = 120
     failed_login_limit: int = 5
     block_duration_minutes: int = 30
@@ -58,10 +61,15 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins_list(self) -> list[str]:
+        """Build list of allowed origins for CORS"""
         origins = [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
         netlify_origin = "https://medirator.netlify.app"
         if netlify_origin not in origins:
             origins.append(netlify_origin)
+        # Always allow localhost for development
+        for local_origin in ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"]:
+            if local_origin not in origins:
+                origins.append(local_origin)
         return origins
 
 
