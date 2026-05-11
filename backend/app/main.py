@@ -56,6 +56,7 @@ async def _bootstrap_admin(db) -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_logging()
+    print(f"✓ CORS enabled for origins: {settings.allowed_origins_list}")
     try:
         db = init_mongo()
         await ensure_indexes(db)
