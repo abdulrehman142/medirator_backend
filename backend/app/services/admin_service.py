@@ -257,9 +257,23 @@ class AdminService:
                 return object_id, doctor_user
         except (InvalidId, TypeError):
             pass
-
         # Formatted ID path (DR-XXXX-XXXX).
+        # Try to match formatted doctor profile ID (from doctors collection) or formatted user id.
+        # We iterate doctor users and build the admin item to compare formatted IDs.
         cursor = self.db.users.find({"role": "doctor"})
+
+        async for user in cursor:
+            # Build the admin item and compare its formatted id to the supplied doctor_id
+            try:
+                item = await self._build_doctor_admin_item(user)
+            except Exception:
+                # If building the admin item fails for a user, skip it
+                continue
+            if item.id == doctor_id:
+                return user["_id"], user
+
+        # If we didn't find a match, raise 404
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
 
     async def recent_completed_appointments(self, limit: int = 10) -> list[dict]:
         """Return recent completed appointments with optional resolved patient/doctor names."""
